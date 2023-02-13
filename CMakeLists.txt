@@ -1,0 +1,46 @@
+cmake_minimum_required(VERSION 3.4.3)
+
+project(compilation-db-retriever C CXX)
+set(CMAKE_CXX_STANDARD 20)
+
+# ==> Configure COMPILATION FLAGS
+
+if (${FORCE_COLORED_OUTPUT})
+    if     ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        add_compile_options (-fdiagnostics-color=always)
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        add_compile_options (-fcolor-diagnostics)
+    endif ()
+endif ()
+
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D NDEBUG -O2")
+
+# ==> Flags for debugging, enable sanitizers and make debugging experience as good as possible
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D _DEBUG -ggdb3 -std=c++20 -Wall -Wextra -Weffc++ -Wcast-align -Wcast-qual -Wchar-subscripts -Wconversion -Wctor-dtor-privacy -Wempty-body -Wfloat-equal -Wformat-nonliteral -Wformat-security -Wformat=2 -Winline -Wnon-virtual-dtor -Woverloaded-virtual -Wpacked -Wpointer-arith -Wredundant-decls -Wsign-promo -Wstrict-overflow=2 -Wswitch-default -Wswitch-enum -Wundef -Wunreachable-code -Wvariadic-macros -Wno-missing-field-initializers -Wno-narrowing -Wno-old-style-cast -Wno-varargs -fcheck-new -fsized-deallocation -fstack-check -fstack-protector -fstrict-overflow -fno-omit-frame-pointer -fPIE -mavx2 -march=native -mtune=native -O0")
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Waggressive-loop-optimizations -Wconditionally-supported -Wformat-signedness -Wlogical-op -Wopenmp-simd -Wstrict-null-sentinel -Wsuggest-attribute=noreturn -Wsuggest-final-methods -Wsuggest-final-types -Wsync-nand -Wuseless-cast -fconcepts-diagnostics-depth=3 -Wno-literal-suffix")
+endif ()
+
+# ==> Link LLVM libraries
+
+find_package(LLVM REQUIRED CONFIG)
+
+set(CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_CMAKE_DIR}")
+
+include(AddLLVM)
+
+message(STATUS "CMAKE_ROOT_DIR: ${LLVM_ROOT_DIR}")
+find_package(Clang REQUIRED CONFIG)
+
+# ==> Create target for our checker!
+
+add_llvm_executable(find-cxx-flags find-cxx-flags.cpp)
+
+target_include_directories(find-cxx-flags PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+target_compile_definitions(find-cxx-flags PRIVATE ${LLVM_DEFINITIONS})
+
+target_link_libraries(find-cxx-flags PRIVATE clangTooling)
