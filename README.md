@@ -19,7 +19,7 @@ you want to test something in your file, create new project, ...)
 
 But it's inconvenient. And this tool aims to address that.
 
-For example, to get AST you can now do:
+For example, to get AST you can now do (there is example of bit more elaborate, but ideologically the same script in [scripts/ast](scripts/ast)):
 ```sh
 clang -Xclang -ast-dump $(find-cxx-flags my-file.cpp)
 ```
