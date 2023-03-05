@@ -54,7 +54,9 @@ int main(int argc, const char **argv) {
     cl::ParseCommandLineOptions(argc, argv, "Output compilation flags for selected file");
 
     fs::path file_path(file_name.getValue());
-    auto db = find_compilation_database(fs::absolute(file_path)).value().string();
+    fs::path absolute_file_path = fs::absolute(file_path);
+
+    auto db = find_compilation_database(absolute_file_path).value().string();
 
     std::string error_message;
     auto compilation_db = CompilationDatabase::loadFromDirectory(db, error_message);
@@ -64,7 +66,7 @@ int main(int argc, const char **argv) {
         return EXIT_FAILURE;
     }
 
-    auto build_commands = compilation_db->getCompileCommands(file_name);
+    auto build_commands = compilation_db->getCompileCommands(absolute_file_path.c_str());
     if (build_commands.size() != 1) {
         llvm::errs() << error_message << "\n";
         return EXIT_FAILURE;
